@@ -1,4 +1,5 @@
 @extends('layouts.app')
+@section('nav_title', 'ユーザー情報変更')
 
 @section('content')
     <div class="container max-w-2xl mx-auto p-4 bg-white rounded shadow">
@@ -7,58 +8,59 @@
             ← 戻る
         </button>
 
-        {{-- エラーメッセージ --}}
-        @if ($errors->any())
-            <div class="bg-red-100 text-red-700 p-3 rounded">
-                <ul class="list-disc list-inside">
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
-
-        {{-- 編集フォーム --}}
-        <form method="POST" action="{{ route('tasks.update', $task->id) }}">
+        {{-- フォーム --}}
+        <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data" novalidate>
             @csrf
             @method('PUT')
 
-            <div>
-                <label class="block font-semibold">タスク名 <span class="text-red-500">*</span></label>
-                <input type="text" name="title" value="{{ old('title', $task->title) }}" class="w-full border px-3 py-2 rounded" required>
+            @php
+                $user = Auth::user();
+                $profileImage = $user->profile_image_path ?? null;
+            @endphp
+
+            {{-- プロフィール画像表示 --}}
+            <div class="mb-4">
+                <label class="block mb-1 font-semibold">プロフィール画像</label>
+                <img 
+                    src="{{ $profileImage ? asset('storage/' . $profileImage) : asset('images/default_profile.png') }}" 
+                    alt="プロフィール画像" 
+                    class="w-24 h-24 rounded-full object-cover border border-gray-300"
+                >
             </div>
 
-            <div>
-                <label class="block font-semibold">担当者 <span class="text-red-500">*</span></label>
-                <select name="assigned_user_id" class="w-full border px-3 py-2 rounded" required>
-                    <option value="">選択してください</option>
-                    <option value="me" {{ old('assigned_user_id', $task->assigned_user_id) == auth()->id() ? 'selected' : '' }}>自分</option>
-                    @foreach ($users as $user)
-                        <option value="{{ $user->id }}" {{ old('assigned_user_id', $task->assigned_user_id) == $user->id ? 'selected' : '' }}>
-                            {{ $user->name }}
-                        </option>
-                    @endforeach
-                </select>
+            {{-- 画像アップロード --}}
+            <div class="mb-4">
+                <label for="profile_image" class="block font-semibold mb-1">画像を選択（任意）</label>
+                <input type="file" name="profile_image" id="profile_image" accept="image/*" class="block w-full border rounded p-2">
+                @error('profile_image')
+                    <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                @enderror
             </div>
 
-            <div>
-                <label class="block font-semibold">ステータス <span class="text-red-500">*</span></label>
-                <select name="task_status" class="w-full border px-3 py-2 rounded" required>
-                    <option value="">選択してください</option>
-                    @foreach(['未着手', '着手中', '保留', '完了'] as $status)
-                        <option value="{{ $status }}" {{ old('task_status', $task->task_status) === $status ? 'selected' : '' }}>
-                            {{ $status }}
-                        </option>
-                    @endforeach
-                </select>
+            {{-- ユーザー名 --}}
+            <div class="mb-4">
+                <label for="name" class="block font-semibold mb-1">ユーザー名 <span class="text-red-600">*</span></label>
+                <input type="text" name="name" id="name" value="{{ old('name', $user->name) }}" required class="block w-full border rounded p-2">
+                @error('name')
+                    <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                @enderror
             </div>
 
-            <div>
-                <label class="block font-semibold">備考</label>
-                <textarea name="description" rows="4" class="w-full border px-3 py-2 rounded">{{ old('description', $task->description) }}</textarea>
+            {{-- メールアドレス --}}
+            <div class="mb-4">
+                <label for="email" class="block font-semibold mb-1">メールアドレス <span class="text-red-600">*</span></label>
+                <input type="email" name="email" id="email" value="{{ old('email', $user->email) }}" required class="block w-full border rounded p-2">
+                @error('email')
+                    <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                @enderror
             </div>
 
-            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">更新</button>
+            {{-- 登録ボタン --}}
+            <div>
+                <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
+                    登録
+                </button>
+            </div>
         </form>
     </div>
 @endsection

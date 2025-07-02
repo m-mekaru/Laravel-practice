@@ -1,13 +1,13 @@
+@extends('layouts.app')
 @section('nav_title', 'タスク新規作成')
 
-<x-app-layout>
-    <x-slot name="header">
-</x-slot>
+@section('header')
+<h2 class="text-xl font-bold">タスク新規作成</h2>
+@endsection
 
-
-    <div class=" max-w-2xl mx-auto space-y-6">
-
-        <div class="container max-w-2xl mx-auto p-4 bg-white rounded shadow">
+@section('content')
+<div class="max-w-2xl mx-auto space-y-6">
+    <div class="container max-w-2xl mx-auto p-4 bg-white rounded shadow">
         {{-- 戻るボタン --}}
         <button type="button" onclick="history.back()" class="mb-4 px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">
             ← 戻る
@@ -59,4 +59,5 @@
             <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded">登録</button>
         </form>
     </div>
-</x-app-layout>
+</div>
+@endsection
