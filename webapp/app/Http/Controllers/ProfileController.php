@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Http\Requests\ProfileUpdateRequest;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\DB;
 
 class ProfileController extends Controller
 {
@@ -14,35 +14,30 @@ class ProfileController extends Controller
      */
     public function edit()
     {
-        return view('profile.edit');
+        $user = Auth::user();
+        return view('profile.edit', compact('user'));
     }
 
     /**
      * プロフィール更新処理
      */
-    public function update(Request $request)
+    public function update(ProfileUpdateRequest $request)
     {
         $user = Auth::user();
 
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
-            'profile_image' => ['nullable', 'image', 'max:2048'], // 2MBまで
-        ]);
+        DB::transaction(function () use ($request, $user) {
+            // バリデーション済みデータを取得
+            $data = $request->validated();
 
-        // 画像アップロード
-        if ($request->hasFile('profile_image')) {
-            $path = $request->file('profile_image')->store('profile_images', 'public');
-            $user->profile_image_path = $path;
-        }
+            // 画像アップロード
+            if ($request->hasFile('profile_image')) {
+                $path = $request->file('profile_image')->store('profile_images', 'public');
+                $data['profile_image_path'] = $path;
+            }
 
-        // 情報更新
-        $user->name = $validated['name'];
-        $user->email = $validated['email'];
-
-        // メールアドレス変更なら認証リセットなどの処理が必要ならここに書く
-
-        $user->save();
+            // モデルのメソッドに更新処理を任せる
+            $user->updateProfile($data);
+        });
 
         return Redirect::route('users.index')->with('success', 'プロフィールを更新しました。');
     }
@@ -58,12 +53,12 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
-        Auth::logout();
-
-        $user->delete();
-
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        DB::transaction(function () use ($user, $request) {
+            Auth::logout();
+            $user->delete();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        });
 
         return Redirect::to('/');
     }
